@@ -30,11 +30,21 @@ class launch_site_base(ABC):
     A base class for launch sites.
     """
 
-    def __init__(self):
-        self.__sitename: str = ""
-        self.__geometry: pd.DataFrame = None
-        self.__centroid: Point = None
-        self.__is_fall_erea = False
+    def __init__(
+        self, geometry: pd.DataFrame, sitename: str, is_fall_erea: bool
+    ) -> None:
+        if geometry is None:
+            geometry = pd.read_csv(filepath)
+
+        geometry.rename(columns=lambda s: s.translate(COORD_COLS_TABLE), inplace=True)
+
+        if not {"lat", "lon"} <= geometry.columns:
+            raise ValueError("The column names are invalid. Must have specific names.")
+
+        self.geometry: pd.DataFrame = geometry
+        self.sitename = sitename if sitename is not None else filepath.stem
+        self.is_fall_erea = is_fall_erea
+        self.centroid: Point = geometry.centroid
 
     @abstractmethod
     def GO_NOGO(self, point: Point) -> bool:
@@ -54,15 +64,29 @@ class launch_site_base(ABC):
 
 
 class safety_zone(launch_site_base):
+    @overload
+    def __init__(
+        self, geometry: pd.DataFrame, sitename: str = None, is_fall_erea: bool = True
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        filepath: str | os.PathLike[str],
+        sitename: str = None,
+        is_fall_erea: bool = True,
+    ) -> None: ...
+
     def __init__(
         self,
         geometry: pd.DataFrame,
+        filepath: str | os.PathLike[str],
         sitename: str,
+        is_fall_erea: bool,
     ):
-        super().__init__()
-        self.__geometry = geometry
-        self.__sitename = sitename
-        self.__centroid = self.__geometry.centroid
+        if geometry is None:
+            geometry = pd.read_csv(filepath)
+        super().__init__(geometry, sitename, is_fall_erea)
 
     def GO_NOGO(self, point: Point) -> bool:
         return self.__geometry.contains(point)
@@ -78,7 +102,7 @@ class boundary_line(launch_site_base):
         df: pd.DataFrame,
         filepath: Path,
         sitename: str,
-    ):
+    ) -> None:
         super().__init__()
         if df is None and filepath is None:
             raise ValueError("Either df or filepath must be specified.")
