@@ -1,0 +1,25 @@
+# config
+
+[map]
+# whethre to save the map tle image data (Recommended: True)
+saveMapTile = true
+# Data attributes for the map tiles
+dataAttribution = "国土地理院"
+# Data URL for the map tiles
+dataUrl = "https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
+# zoom level
+zoom = 12
+# coordinate system (optional)
+# system = "epsg:6678" # JGD2011 (Aomori, Akita, Yamagata, Iwate and Miyagi)
+
+
+[output]
+# Output image size (inch)
+imageSize = [12, 8]
+# Output image DPI
+dpi = 300
+# margin from the map boundary to the ploted points.
+# if given scalar or 1-element, margin is set to the scalar for all sides.
+# if given 2-element array, margin is set to the first element for the top and bottom, and the second element for the left and right.
+# if given 4-element array, margin is set to the top, right, bottom, and left in order.
+margin = 0.05
