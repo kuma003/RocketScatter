@@ -19,12 +19,14 @@ class kml_placemark:
 @dataclass
 class kml_folder:
     name: str
+    folders: List[kml_folder]
     placemarks: List[kml_placemark]
 
 
-def parse_folder(folder: any, all_folders: List[kml_folder]) -> None:
+def parse_folder(folder: any) -> kml_folder:
     folder_name = folder.name.text if hasattr(folder, "name") else "Unnamed Folder"
     placemarks = []
+    folders = []
 
     for placemark in getattr(folder, "Placemark", []):
         name = (
@@ -50,21 +52,24 @@ def parse_folder(folder: any, all_folders: List[kml_folder]) -> None:
 
         placemarks.append(kml_placemark(name, geometry))
 
-    all_folders.append(kml_folder(folder_name, placemarks))
+    child_folders = [parse_folder(child) for child in getattr(folder, "Folder", [])]
+
+    return kml_folder(
+        folder_name,
+        folders=child_folders,
+        placemarks=placemarks,
+    )
 
     if hasattr(folder, "Folder"):
         for child in folder.Folder:
             parse_folder(child, all_folders)
 
 
-def read_kml(kml_file: PathLike) -> List[kml_folder]:
+def read_kml(kml_file: PathLike) -> kml_folder:
     with open(kml_file, "r", encoding="utf-8") as file:
         root = parser.parse(file).getroot()
-        all_folders: List[kml_folder] = []
-        parse_folder(root.Document, all_folders)
-        return [
-            folder for folder in all_folders if len(folder.placemarks)
-        ]  # remove empty folders
+        parse_folder(root.Document)
+        return parse_folder(root.Document)
 
 
 def ask_and_export_mapData_file(
